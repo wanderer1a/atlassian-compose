@@ -1,0 +1,176 @@
+version: '3'
+
+services:
+  nginx:
+   build:
+      dockerfile: Dockerfile
+      context: ./nginx
+   image: nginx:custom
+   container_name: nginx
+   restart: always
+   depends_on:
+      - jira
+      - confluence
+      - bitbucket
+   ports:
+     - 8080:8080
+   networks:
+     - jiranet  
+  
+  jira:
+    container_name: jira
+    depends_on:
+      - postgresql_jira
+    image: atlassian/jira-software:10.3
+    networks:
+      - jiranet
+    volumes:
+      - jiradata:/var/atlassian/jira
+    environment:
+      ATL_JDBC_URL: jdbc:postgresql://postgresql_jira:5432/jiradb
+      ATL_JDBC_USER: jiradb
+      ATL_JDBC_PASSWORD: admin
+      SETENV_JVM_MINIMUM_MEMORY: 2048m
+      SETENV_JVM_MAXIMUM_MEMORY: 4096m
+      ATL_TOMCAT_CONTEXTPATH: /jira
+      ATL_TOMCAT_PORT: 8081
+      ATL_PROXY_NAME: localhost
+      ATL_PROXY_PORT: 8080     
+  
+  confluence:
+    container_name: confluence
+    depends_on:
+      - postgresql_confluence
+    image: atlassian/confluence:7.13.0
+    networks:
+      - jiranet
+    volumes:
+      - 'confluencedata:/var/atlassian/application-data/confluence'
+    environment:
+      ATL_JDBC_URL: jdbc:postgresql://postgresql_confluence:5432/confluencedb
+      ATL_JDBC_USER: confluencedb
+      ATL_JDBC_PASSWORD: admin
+      ATL_DB_TYPE: postgresql
+      ATL_DB_DRIVER: org.postgresql.Driver
+      ATL_DB_SCHEMA_NAME: public
+      ATL_TOMCAT_CONTEXTPATH: /confluence
+      ATL_PROXY_NAME: localhost
+      ATL_PROXY_PORT: 8080
+  
+  bitbucket:
+    container_name: bitbucket
+    build:
+      dockerfile: Dockerfile
+      context: ./bitbucket
+    image: bitbucket:custom
+    depends_on:
+      - postgresql_bitbucket
+    networks:
+      - jiranet
+    volumes:
+      - 'bitbucketdata:/var/atlassian/application-data/bitbucket'
+    environment:
+      ATL_JDBC_URL: jdbc:postgresql://postgresql_bitbucket:5432/bitbucketdb
+      ATL_JDBC_USER: bitbucketdb
+      ATL_JDBC_PASSWORD: admin
+      ATL_DB_TYPE: postgresql
+      ATL_DB_DRIVER: org.postgresql.Driver
+      ATL_DB_SCHEMA_NAME: public
+      ATL_TOMCAT_CONTEXTPATH: /bitbucket
+      ATL_PROXY_NAME: localhost
+      ATL_PROXY_PORT: 8080
+      
+  bamboo:
+    container_name: bamboo
+    depends_on:
+      - postgresql_bamboo
+    image: atlassian/bamboo:10.2.1
+    networks:
+      - jiranet
+    volumes:
+      - 'bamboodata:/var/atlassian/application-data/bamboo'
+    environment:
+      ATL_JDBC_URL: jdbc:postgresql://postgresql_bamboo:5432/bamboofdb
+      ATL_JDBC_USER: bamboodb
+      ATL_JDBC_PASSWORD: admin
+      ATL_DB_TYPE: postgresql
+      ATL_DB_DRIVER: org.postgresql.Driver
+      ATL_DB_SCHEMA_NAME: public
+      ATL_TOMCAT_CONTEXTPATH: /bamboo
+      ATL_PROXY_NAME: localhost
+      ATL_PROXY_PORT: 8080
+
+  postgresql_jira:
+    container_name: postgres_jira
+    image: postgres:15.10
+    networks:
+      - jiranet
+    volumes:
+      - postgresqldata_jira:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: jiradb
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: jiradb
+      POSTGRES_ENCODING: UNICODE
+      POSTGRES_COLLATE: C
+      POSTGRES_COLLATE_TYPE: C
+      
+  postgresql_confluence:
+    container_name: postgres_confluence
+    image: postgres:15.10
+    networks:
+      - jiranet
+    volumes:
+      - postgresqldata_confluence:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: confluencedb
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: confluencedb
+      POSTGRES_ENCODING: UNICODE
+      POSTGRES_COLLATE: C
+      POSTGRES_COLLATE_TYPE: C
+      
+  postgresql_bitbucket:
+    container_name: postgres_bitbucket
+    image: postgres:15.10
+    networks:
+      - jiranet
+    volumes:
+      - postgresqldata_bitbucket:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: bitbucketdb
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: bitbucketdb
+      POSTGRES_ENCODING: UNICODE
+      POSTGRES_COLLATE: C
+      POSTGRES_COLLATE_TYPE: C      
+
+  postgresql_bamboo:
+    container_name: postgres_bamboo
+    image: postgres:15.10
+    networks:
+      - jiranet
+    volumes:
+      - postgresqldata_bamboo:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: bamboodb
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: bamboodb
+      POSTGRES_ENCODING: UNICODE
+      POSTGRES_COLLATE: C
+      POSTGRES_COLLATE_TYPE: C 
+      
+volumes:
+  jiradata: {}
+  confluencedata: {}
+  bitbucketdata: {}
+  bamboodata: {}
+  postgresqldata_jira: {}
+  postgresqldata_confluence: {}
+  postgresqldata_bitbucket: {}
+  postgresqldata_bamboo: {}  
+
+
+networks:
+  jiranet:
+    driver: bridge

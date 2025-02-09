@@ -8,10 +8,6 @@ services:
    image: nginx:custom
    container_name: nginx
    restart: always
-   depends_on:
-      - jira
-      - confluence
-      - bitbucket
    ports:
      - 8080:8080
    networks:
@@ -19,17 +15,18 @@ services:
   
   jira:
     container_name: jira
+    restart: always
     depends_on:
       - postgresql_jira
     image: atlassian/jira-software:10.3
     networks:
       - jiranet
     volumes:
-      - jiradata:/var/atlassian/jira
+      - jiradata:/var/atlassian/application-data/jira
     environment:
       ATL_JDBC_URL: jdbc:postgresql://postgresql_jira:5432/jiradb
-      ATL_JDBC_USER: jiradb
-      ATL_JDBC_PASSWORD: admin
+      ATL_JDBC_USER: jiradbadmin
+      ATL_JDBC_PASSWORD: jiradbpassword
       SETENV_JVM_MINIMUM_MEMORY: 2048m
       SETENV_JVM_MAXIMUM_MEMORY: 4096m
       ATL_TOMCAT_CONTEXTPATH: /jira
@@ -39,6 +36,7 @@ services:
   
   confluence:
     container_name: confluence
+    restart: always
     depends_on:
       - postgresql_confluence
     image: atlassian/confluence:7.13.0
@@ -48,8 +46,8 @@ services:
       - 'confluencedata:/var/atlassian/application-data/confluence'
     environment:
       ATL_JDBC_URL: jdbc:postgresql://postgresql_confluence:5432/confluencedb
-      ATL_JDBC_USER: confluencedb
-      ATL_JDBC_PASSWORD: admin
+      ATL_JDBC_USER: confluencedbadmin
+      ATL_JDBC_PASSWORD: confluencedbpassword
       ATL_DB_TYPE: postgresql
       ATL_DB_DRIVER: org.postgresql.Driver
       ATL_DB_SCHEMA_NAME: public
@@ -59,6 +57,7 @@ services:
   
   bitbucket:
     container_name: bitbucket
+    restart: always
     build:
       dockerfile: Dockerfile
       context: ./bitbucket
@@ -71,8 +70,8 @@ services:
       - 'bitbucketdata:/var/atlassian/application-data/bitbucket'
     environment:
       ATL_JDBC_URL: jdbc:postgresql://postgresql_bitbucket:5432/bitbucketdb
-      ATL_JDBC_USER: bitbucketdb
-      ATL_JDBC_PASSWORD: admin
+      ATL_JDBC_USER: bitbucketdbadmin
+      ATL_JDBC_PASSWORD: bitbucketdbpassword
       ATL_DB_TYPE: postgresql
       ATL_DB_DRIVER: org.postgresql.Driver
       ATL_DB_SCHEMA_NAME: public
@@ -82,6 +81,7 @@ services:
       
   bamboo:
     container_name: bamboo
+    restart: always
     depends_on:
       - postgresql_bamboo
     image: atlassian/bamboo:10.2.1
@@ -90,9 +90,9 @@ services:
     volumes:
       - 'bamboodata:/var/atlassian/application-data/bamboo'
     environment:
-      ATL_JDBC_URL: jdbc:postgresql://postgresql_bamboo:5432/bamboofdb
-      ATL_JDBC_USER: bamboodb
-      ATL_JDBC_PASSWORD: admin
+      ATL_JDBC_URL: jdbc:postgresql://postgresql_bamboo:5432/bamboodb
+      ATL_JDBC_USER: bamboodbadmin
+      ATL_JDBC_PASSWORD: bamboodbpassword
       ATL_DB_TYPE: postgresql
       ATL_DB_DRIVER: org.postgresql.Driver
       ATL_DB_SCHEMA_NAME: public
@@ -102,14 +102,15 @@ services:
 
   postgresql_jira:
     container_name: postgres_jira
+    restart: always
     image: postgres:15.10
     networks:
       - jiranet
     volumes:
       - postgresqldata_jira:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: jiradb
-      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: jiradbadmin
+      POSTGRES_PASSWORD: jiradbpassword
       POSTGRES_DB: jiradb
       POSTGRES_ENCODING: UNICODE
       POSTGRES_COLLATE: C
@@ -117,14 +118,15 @@ services:
       
   postgresql_confluence:
     container_name: postgres_confluence
+    restart: always
     image: postgres:15.10
     networks:
       - jiranet
     volumes:
       - postgresqldata_confluence:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: confluencedb
-      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: confluencedbadmin
+      POSTGRES_PASSWORD: confluencedbpassword
       POSTGRES_DB: confluencedb
       POSTGRES_ENCODING: UNICODE
       POSTGRES_COLLATE: C
@@ -132,14 +134,15 @@ services:
       
   postgresql_bitbucket:
     container_name: postgres_bitbucket
+    restart: always
     image: postgres:15.10
     networks:
       - jiranet
     volumes:
       - postgresqldata_bitbucket:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: bitbucketdb
-      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: bitbucketdbadmin
+      POSTGRES_PASSWORD: bitbucketdbpassword
       POSTGRES_DB: bitbucketdb
       POSTGRES_ENCODING: UNICODE
       POSTGRES_COLLATE: C
@@ -147,14 +150,15 @@ services:
 
   postgresql_bamboo:
     container_name: postgres_bamboo
+    restart: always
     image: postgres:15.10
     networks:
       - jiranet
     volumes:
       - postgresqldata_bamboo:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: bamboodb
-      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: bamboodbadmin
+      POSTGRES_PASSWORD: bamboodbpassword
       POSTGRES_DB: bamboodb
       POSTGRES_ENCODING: UNICODE
       POSTGRES_COLLATE: C
